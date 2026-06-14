@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Крестики-нолики · Невозможный AI ставит за полем · Полный перевод</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+            transition: background 0.2s, color 0.2s;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        body.light {
+            background: #e2e6ed;
+        }
+        body.light .game-wrapper {
+            background: #f8f9fc;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+        }
+        body.light .game-panel {
+            background: #ffffff;
+        }
+        body.light .top-bar, body.light .difficulty-box, body.light .size-box, body.light .status, body.light .side-box {
+            background: #eef2f7;
+        }
+        body.light .cell {
+            background: #ffffff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05), inset 0 0 0 1px #cbd5e1;
+            color: #1e2f3a;
+        }
+        body.light .cheat-cell {
+            background: #ffe0e0;
+            box-shadow: 0 0 0 2px #ff4444;
+        }
+        body.light .cheat-label {
+            color: #cc0000;
+        }
+
+        body.dark {
+            background: #0f1217;
+        }
+        body.dark .game-wrapper {
+            background: #1a1d24;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.5);
+        }
+        body.dark .game-panel {
+            background: #22262f;
+        }
+        body.dark .top-bar, body.dark .difficulty-box, body.dark .size-box, body.dark .status, body.dark .side-box {
+            background: #2a2e3a;
+            color: #e0e0e0;
+        }
+        body.dark .cell {
+            background: #2a2e3a;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3), inset 0 0 0 1px #3a3f4e;
+            color: #e0e0e0;
+        }
+        body.dark .cheat-cell {
+            background: #6b2a2a;
+            box-shadow: 0 0 0 2px #ff6666;
+        }
+        body.dark .lang-btn, body.dark .difficulty-btn, body.dark .size-btn, body.dark .side-btn {
+            background: #3a3f4e;
+            color: #e0e0e0;
+        }
+        body.dark .lang-btn.active, body.dark .difficulty-btn.active, body.dark .size-btn.active, body.dark .side-btn.active {
+            background: #5a7a9a;
+            color: white;
+        }
+        body.dark .modal-content, body.dark .shop-item {
+            background: #2a2e3a;
+            color: #e0e0e0;
+        }
+        body.dark .check-win-btn {
+            background: #5a7a9a;
+        }
+        body.dark .reset-btn {
+            background: #3a3f4e;
+            color: #e0e0e0;
+        }
+
+        .game-wrapper {
+            max-width: 1100px;
+            width: 100%;
+            border-radius: 2rem;
+            padding: 16px;
+            transition: background 0.2s;
+        }
+
+        .game-panel {
+            border-radius: 1.8rem;
+            padding: 20px;
+            transition: background 0.2s;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 8px 18px;
+            border-radius: 60px;
+            margin-bottom: 20px;
+        }
+
+        .lang-selector {
+            display: flex;
+            gap: 6px;
+        }
+
+        .lang-btn {
+            border: none;
+            font-weight: bold;
+            font-size: 0.75rem;
+            padding: 5px 12px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        .score-board {
+            padding: 5px 16px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.05);
+        }
+
+        .score-board span:first-child {
+            font-size: 0.8rem;
+            padding: 4px 12px;
+            border-radius: 30px;
+            background: #2c5a6e;
+            color: white;
+        }
+        
+        .settings-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+            justify-content: space-between;
+        }
+
+        .difficulty-box, .size-box, .side-box {
+            border-radius: 48px;
+            padding: 8px 14px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .difficulty-btn, .size-btn, .side-btn {
+            border: none;
+            padding: 5px 14px;
+            border-radius: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: 0.1s;
+        }
+        .difficulty-btn.active, .size-btn.active, .side-btn.active {
+            background: #2c5a6e;
+            color: white;
+            box-shadow: 0 0 4px rgba(0,0,0,0.3);
+        }
+
+        .status {
+            margin: 12px 0 18px;
+            padding: 12px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 60px;
+        }
+
+        .board-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .board {
+            display: grid;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+            border-radius: 48px;
+            margin-bottom: 20px;
+            background: rgba(0,0,0,0.03);
+        }
+        
+        .cell {
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.05s linear;
+            aspect-ratio: 1 / 1;
+            min-width: 70px;
+        }
+        .cell:active { transform: scale(0.97); }
+        
+        /* Читерская клетка за полем */
+        .cheat-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: slideIn 0.3s ease-out;
+        }
+        .cheat-cell {
+            width: 70px;
+            height: 70px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.8rem;
+            font-weight: bold;
+            animation: pulse 0.3s ease-in-out;
+        }
+        .cheat-label {
+            margin-top: 8px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-align: center;
+            white-space: nowrap;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(0.3); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .check-win-btn, .reset-btn {
+            border: none;
+            width: 100%;
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 12px;
+            border-radius: 60px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: 0.1s;
+        }
+        .check-win-btn {
+            background: #2c5a6e;
+            color: white;
+        }
+        .reset-btn {
+            background: #dce2ec;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            border-radius: 2rem;
+            max-width: 400px;
+            width: 90%;
+            padding: 24px;
+            text-align: center;
+        }
+        .shop-item {
+            margin: 12px 0;
+            padding: 12px;
+            border-radius: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .buy-btn {
+            border: none;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .buy-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .close-modal {
+            margin-top: 12px;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            border: none;
+            font-weight: bold;
+            background: #bcc4d0;
+        }
+        body.dark .close-modal {
+            background: #3a3f4e;
+            color: white;
+        }
+        
+        .settings-btn, .shop-btn {
+            border: none;
+            padding: 6px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            background: #2c5a6e;
+            color: white;
+        }
+        
+        .setting-option {
+            margin: 15px 0;
+            text-align: left;
+        }
+        .setting-option label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .setting-option select {
+            padding: 8px;
+            border-radius: 30px;
+            width: 100%;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 600px) {
+            .cell { font-size: 1.8rem; min-width: 55px; }
+            .cheat-cell { width: 55px; height: 55px; font-size: 1.8rem; }
+            .cheat-label { font-size: 0.6rem; white-space: normal; }
+        }
+    </style>
+</head>
+<body class="light">
+<div class="game-wrapper">
+    <div class="game-panel">
+        <div class="top-bar">
+            <div class="lang-selector">
+                <button class="lang-btn" data-lang="ru">🇷🇺 Рус</button>
+                <button class="lang-btn" data-lang="be">🇧🇾 Бел</button>
+                <button class="lang-btn" data-lang="en">🇬🇧 Eng</button>
+            </div>
+            <div class="score-board">
+                <span id="scoreLabel">ПОБЕДЫ</span>
+                <span id="winScore">0</span>
+            </div>
+            <button class="shop-btn" id="openShopBtn">МАГАЗИН</button>
+            <button class="settings-btn" id="openSettingsBtn">НАСТРОЙКИ</button>
+        </div>
+
+        <div class="settings-row">
+            <div class="difficulty-box">
+                <span id="diffLabel">Сложность:</span>
+                <button class="difficulty-btn" data-diff="easy">Лёгкий</button>
+                <button class="difficulty-btn" data-diff="medium">Средний</button>
+                <button class="difficulty-btn" data-diff="hard">Сложный</button>
+                <button class="difficulty-btn" data-diff="impossible" id="impossibleBtn">Невозможный 🔒</button>
+            </div>
+            <div class="size-box">
+                <span id="sizeLabel">Поле:</span>
+                <button class="size-btn" data-size="3">3x3</button>
+                <button class="size-btn" data-size="4" id="size4Btn" disabled>4x4 🔒</button>
+                <button class="size-btn" data-size="5" id="size5Btn" disabled>5x5 🔒</button>
+            </div>
+            <div class="side-box">
+                <span id="sideLabel">Играть за:</span>
+                <button class="side-btn" data-side="X">❌ X</button>
+                <button class="side-btn" data-side="O">⭕ O</button>
+            </div>
+        </div>
+
+        <div class="status" id="statusMsg">Ваш ход</div>
+        
+        <div class="board-container" id="boardContainer">
+            <div class="board" id="board"></div>
+            <div id="cheatArea" style="display: none;" class="cheat-area">
+                <div class="cheat-cell" id="cheatCell"></div>
+                <div class="cheat-label" id="cheatLabel">БОТ ПОСТАВИЛ ЗА ПОЛЕМ!</div>
+            </div>
+        </div>
+        
+        <button class="check-win-btn" id="checkWinBtn">ПРОВЕРИТЬ И ЗАЧИСЛИТЬ ПОБЕДУ</button>
+        <button class="reset-btn" id="resetGameBtn">НОВАЯ ИГРА</button>
+    </div>
+</div>
+
+<!-- Магазин -->
+<div id="shopModal" class="modal">
+    <div class="modal-content">
+        <h2 id="shopTitle">МАГАЗИН</h2>
+        <div class="shop-item" id="shopDouble">
+            <span id="doubleText">✨ Удвоение баллов (2 мин)</span>
+            <button class="buy-btn" data-item="double" id="buyDouble">1 победа</button>
+        </div>
+        <div class="shop-item" id="shopSize4">
+            <span id="size4Text">🎲 ПОЛЕ 4x4</span>
+            <button class="buy-btn" data-item="size4" id="buySize4">2 победы</button>
+        </div>
+        <div class="shop-item" id="shopSize5">
+            <span id="size5Text">🌟 ПОЛЕ 5x5</span>
+            <button class="buy-btn" data-item="size5" id="buySize5">4 победы</button>
+        </div>
+        <div class="shop-item" id="shopImpossible">
+            <span id="impossibleText">💀 НЕВОЗМОЖНЫЙ уровень</span>
+            <button class="buy-btn" data-item="impossible" id="buyImpossible">3 победы</button>
+        </div>
+        <div class="shop-item" id="shopRandom">
+            <span id="randomText">🎲 РАНДОМ (сюрприз)</span>
+            <button class="buy-btn" data-item="random" id="buyRandom">2 победы</button>
+        </div>
+        <button class="close-modal" id="closeModal">ЗАКРЫТЬ</button>
+    </div>
+</div>
+
+<!-- Модалка настроек -->
+<div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <h2 id="settingsTitle">НАСТРОЙКИ</h2>
+        <div class="setting-option">
+            <label id="langSettingLabel">🌐 Язык:</label>
+            <select id="langSelect">
+                <option value="ru">Русский</option>
+                <option value="be">Беларуская</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+        <div class="setting-option">
+            <label id="themeSettingLabel">🎨 Тема:</label>
+            <select id="themeSelect">
+                <option value="light">Светлая</option>
+                <option value="dark">Тёмная</option>
+            </select>
+        </div>
+        <button class="close-modal" id="closeSettingsBtn">ЗАКРЫТЬ</button>
+    </div>
+</div>
+
+<script>
+    // ========== ПОЛНЫЙ ПЕРЕВОД ==========
+    const translations = {
+        ru: {
+            score:"ПОБЕДЫ", shop:"МАГАЗИН", diff:"Сложность:", size:"Поле:", side:"Играть за:",
+            easy:"Лёгкий", medium:"Средний", hard:"Сложный", impossible:"Невозможный",
+            win:"ВЫ ВЫИГРАЛИ! +", lose:"ВЫ ПРОИГРАЛИ", draw:"НИЧЬЯ", yourTurn:"Ваш ход", aiTurn:"Ход AI",
+            check:"ПРОВЕРИТЬ И ЗАЧИСЛИТЬ ПОБЕДУ", newGame:"НОВАЯ ИГРА", settings:"НАСТРОЙКИ",
+            doubleItem:"✨ Удвоение баллов (2 мин)", size4Item:"🎲 ПОЛЕ 4x4", size5Item:"🌟 ПОЛЕ 5x5",
+            impossibleItem:"💀 НЕВОЗМОЖНЫЙ уровень", randomItem:"🎲 РАНДОМ (сюрприз)",
+            purchased:"ПРИОБРЕТЕНО", buy:"победы", close:"ЗАКРЫТЬ",
+            settingsTitle:"НАСТРОЙКИ", langLabel:"Язык:", themeLabel:"Тема:", light:"Светлая", dark:"Тёмная",
+            cheatLabel:"БОТ ПОСТАВИЛ СИМВОЛ ЗА ПОЛЕМ!", playAsX:"Крестик (X)", playAsO:"Нолик (O)"
+        },
+        be: {
+            score:"ПЕРАМОГІ", shop:"КРАМА", diff:"Складанасць:", size:"Поле:", side:"Гуляць за:",
+            easy:"Лёгкі", medium:"Сярэдні", hard:"Складны", impossible:"Немагчымы",
+            win:"ВЫ ПЕРАМАГЛІ! +", lose:"ВЫ ПРАЙГРАЛІ", draw:"НІЧЫЯ", yourTurn:"Ваш ход", aiTurn:"Ход AI",
+            check:"ПРАВЕРЫЦЬ І ЗАЛІЧЫЦЬ ПЕРАМОГУ", newGame:"НОВАЯ ГУЛЬНЯ", settings:"НАСТРОЙКІ",
+            doubleItem:"✨ Падваенне балаў (2 хв)", size4Item:"🎲 ПОЛЕ 4x4", size5Item:"🌟 ПОЛЕ 5x5",
+            impossibleItem:"💀 НЕМАГЧЫМЫ ўзровень", randomItem:"🎲 РАНДАМ (сюрпрыз)",
+            purchased:"НАБУТА", buy:"перамогі", close:"ЗАКРЫЦЬ",
+            settingsTitle:"НАСТРОЙКІ", langLabel:"Мова:", themeLabel:"Тэма:", light:"Светлая", dark:"Цёмная",
+            cheatLabel:"БОТ ПАСТАВІЎ СІМВАЛ ЗА ПОЛЕМ!", playAsX:"Крыжык (X)", playAsO:"Нолік (O)"
+        },
+        en: {
+            score:"WINS", shop:"SHOP", diff:"Difficulty:", size:"Board:", side:"Play as:",
+            easy:"Easy", medium:"Medium", hard:"Hard", impossible:"Impossible",
+            win:"YOU WIN! +", lose:"YOU LOSE", draw:"DRAW", yourTurn:"Your turn", aiTurn:"AI turn",
+            check:"CHECK AND CLAIM WIN", newGame:"NEW GAME", settings:"SETTINGS",
+            doubleItem:"✨ Double points (2 min)", size4Item:"🎲 4x4 BOARD", size5Item:"🌟 5x5 BOARD",
+            impossibleItem:"💀 IMPOSSIBLE level", randomItem:"🎲 RANDOM (surprise)",
+            purchased:"PURCHASED", buy:"wins", close:"CLOSE",
+            settingsTitle:"SETTINGS", langLabel:"Language:", themeLabel:"Theme:", light:"Light", dark:"Dark",
+            cheatLabel:"BOT PLACED A SYMBOL BEYOND THE BOARD!", playAsX:"X", playAsO:"O"
+        }
+    };
+    
+    // Состояние
+    let currentLang = 'ru';
+    let winCounter = 0;
+    let doublePointsActive = false;
+    let doublePointsTimeout = null;
+    let doublePurchased = false;
+    let boardSize = 3;
+    let difficulty = 'easy';
+    let impossibleUnlocked = false;
+    let size4Unlocked = false;
+    let size5Unlocked = false;
+    let boardState = [];
+    let gameActive = true;
+    let currentPlayer = 'X';
+    let playerSide = 'X';
+    let aiSide = 'O';
+    let gameEnded = false;
+    let winnerDeclared = false;
+    let currentTheme = 'light';
+    
+    function updateAllTexts() {
+        document.getElementById('scoreLabel').innerHTML = translations[currentLang].score;
+        document.getElementById('diffLabel').innerHTML = translations[currentLang].diff;
+        document.getElementById('sizeLabel').innerHTML = translations[currentLang].size;
+        document.getElementById('sideLabel').innerHTML = translations[currentLang].side;
+        document.getElementById('checkWinBtn').innerHTML = translations[currentLang].check;
+        document.getElementById('resetGameBtn').innerHTML = translations[currentLang].newGame;
+        document.getElementById('openShopBtn').innerHTML = translations[currentLang].shop;
+        document.getElementById('openSettingsBtn').innerHTML = translations[currentLang].settings;
+        document.getElementById('shopTitle').innerHTML = translations[currentLang].shop;
+        document.getElementById('settingsTitle').innerHTML = translations[currentLang].settingsTitle;
+        document.getElementById('langSettingLabel').innerHTML = translations[currentLang].langLabel;
+        document.getElementById('themeSettingLabel').innerHTML = translations[currentLang].themeLabel;
+        document.getElementById('doubleText').innerHTML = translations[currentLang].doubleItem;
+        document.getElementById('size4Text').innerHTML = translations[currentLang].size4Item;
+        document.getElementById('size5Text').innerHTML = translations[currentLang].size5Item;
+        document.getElementById('impossibleText').innerHTML = translations[currentLang].impossibleItem;
+        document.getElementById('randomText').innerHTML = translations[currentLang].randomItem;
+        document.getElementById('cheatLabel').innerHTML = translations[currentLang].cheatLabel;
+        
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            let diff = btn.dataset.diff;
+            if(diff === 'easy') btn.innerHTML = translations[currentLang].easy;
+            if(diff === 'medium') btn.innerHTML = translations[currentLang].medium;
+            if(diff === 'hard') btn.innerHTML = translations[currentLang].hard;
+            if(diff === 'impossible') btn.innerHTML = translations[currentLang].impossible + (impossibleUnlocked ? '' : ' 🔒');
+        });
+        
+        updateShopButtons();
+        if(!gameEnded) updateStatusMsg();
+    }
+    
+    function updateShopButtons() {
+        let buyDouble = document.getElementById('buyDouble');
+        let buySize4 = document.getElementById('buySize4');
+        let buySize5 = document.getElementById('buySize5');
+        let buyImpossible = document.getElementById('buyImpossible');
+        let buyRandom = document.getElementById('buyRandom');
+        
+        if(doublePurchased) {
+            buyDouble.innerHTML = translations[currentLang].purchased;
+            buyDouble.disabled = true;
+        } else {
+            buyDouble.innerHTML = `1 ${translations[currentLang].buy}`;
+            buyDouble.disabled = winCounter < 1;
+        }
+        
+        if(size4Unlocked) {
+            buySize4.innerHTML = translations[currentLang].purchased;
+            buySize4.disabled = true;
+        } else {
+            buySize4.innerHTML = `2 ${translations[currentLang].buy}`;
+            buySize4.disabled = winCounter < 2;
+        }
+        
+        if(size5Unlocked) {
+            buySize5.innerHTML = translations[currentLang].purchased;
+            buySize5.disabled = true;
+        } else {
+            buySize5.innerHTML = `4 ${translations[currentLang].buy}`;
+            buySize5.disabled = winCounter < 4;
+        }
+        
+        if(impossibleUnlocked) {
+            buyImpossible.innerHTML = translations[currentLang].purchased;
+            buyImpossible.disabled = true;
+        } else {
+            buyImpossible.innerHTML = `3 ${translations[currentLang].buy}`;
+            buyImpossible.disabled = winCounter < 3;
+        }
+        
+        buyRandom.innerHTML = `2 ${translations[currentLang].buy}`;
+        buyRandom.disabled = winCounter < 2;
+    }
+    
+    function updateStatusMsg() {
+        if(gameEnded) return;
+        let msg = (currentPlayer === playerSide) ? translations[currentLang].yourTurn : translations[currentLang].aiTurn;
+        document.getElementById('statusMsg').innerHTML = msg;
+    }
+    
+    function setGameOver(message) {
+        gameActive = false;
+        gameEnded = true;
+        document.getElementById('statusMsg').innerHTML = message;
+    }
+    
+    function hideCheat() {
+        document.getElementById('cheatArea').style.display = 'none';
+    }
+    
+    function showCheat(symbol) {
+        const cheatCell = document.getElementById('cheatCell');
+        cheatCell.innerHTML = symbol;
+        document.getElementById('cheatArea').style.display = 'flex';
+    }
+    
+    function updateSizeButtons() {
+        let size4Btn = document.getElementById('size4Btn');
+        let size5Btn = document.getElementById('size5Btn');
+        size4Btn.disabled = !size4Unlocked;
+        size4Btn.innerHTML = size4Unlocked ? '4x4' : '4x4 🔒';
+        size5Btn.disabled = !size5Unlocked;
+        size5Btn.innerHTML = size5Unlocked ? '5x5' : '5x5 🔒';
+        
+        document.querySelectorAll('.size-btn').forEach(btn => {
+            if(parseInt(btn.dataset.size) === boardSize && !btn.disabled) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+    }
+    
+    function updateActiveHighlights() {
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            if(btn.dataset.diff === difficulty) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        document.querySelectorAll('.side-btn').forEach(btn => {
+            if(btn.dataset.side === playerSide) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        updateSizeButtons();
+    }
+    
+    // ========== ИГРОВАЯ ЛОГИКА ==========
+    function checkWinnerGeneric(board, size, player) {
+        for(let i=0; i<size; i++) {
+            let rowWin = true;
+            for(let j=0; j<size; j++) if(board[i*size+j] !== player) { rowWin=false; break; }
+            if(rowWin) return true;
+        }
+        for(let j=0; j<size; j++) {
+            let colWin = true;
+            for(let i=0; i<size; i++) if(board[i*size+j] !== player) { colWin=false; break; }
+            if(colWin) return true;
+        }
+        let diag1 = true;
+        for(let i=0; i<size; i++) if(board[i*size+i] !== player) diag1=false;
+        if(diag1) return true;
+        let diag2 = true;
+        for(let i=0; i<size; i++) if(board[i*size+(size-1-i)] !== player) diag2=false;
+        return diag2;
+    }
+    
+    function isDrawBoard(board, size) { return board.every(cell => cell !== ''); }
+    
+    function checkAndAward() {
+        if(gameEnded && winnerDeclared) return;
+        
+        let playerWin = checkWinnerGeneric(boardState, boardSize, playerSide);
+        let aiWin = checkWinnerGeneric(boardState, boardSize, aiSide);
+        let draw = !playerWin && !aiWin && isDrawBoard(boardState, boardSize);
+        
+        if(playerWin && !winnerDeclared) {
+            let points = doublePointsActive ? 2 : 1;
+            winCounter += points;
+            document.getElementById('winScore').innerHTML = winCounter;
+            setGameOver(`${translations[currentLang].win}${points}`);
+            winnerDeclared = true;
+            updateShopButtons();
+            updateSizeButtons();
+            hideCheat();
+            return;
+        }
+        else if(aiWin && !winnerDeclared) {
+            setGameOver(translations[currentLang].lose);
+            winnerDeclared = true;
+            return;
+        }
+        else if(draw && !winnerDeclared) {
+            setGameOver(translations[currentLang].draw);
+            winnerDeclared = true;
+            hideCheat();
+            return;
+        }
+    }
+    
+    // ========== НЕВОЗМОЖНЫЙ AI: СТАВИТ СИМВОЛ ЗА ПОЛЕМ ==========
+    function getImpossibleMoveWithCheat() {
+        let size = boardSize;
+        let lines = [];
+        for(let i=0; i<size; i++) {
+            let row = [];
+            for(let j=0; j<size; j++) row.push(i*size+j);
+            lines.push(row);
+        }
+        for(let j=0; j<size; j++) {
+            let col = [];
+            for(let i=0; i<size; i++) col.push(i*size+j);
+            lines.push(col);
+        }
+        let diag1=[], diag2=[];
+        for(let i=0; i<size; i++) { diag1.push(i*size+i); diag2.push(i*size+(size-1-i)); }
+        lines.push(diag1, diag2);
+        
+        for(let line of lines) {
+            let aiCount = 0, emptyPos = -1;
+            for(let idx of line) {
+                if(boardState[idx] === aiSide) aiCount++;
+                else if(boardState[idx] === '') emptyPos = idx;
+            }
+            if(aiCount === 2 && emptyPos !== -1) {
+                // ЧИТЕРСТВО: показываем символ ЗА ПОЛЕМ и сразу объявляем победу
+                showCheat(aiSide);
+                gameActive = false;
+                gameEnded = true;
+                winnerDeclared = true;
+                document.getElementById('statusMsg').innerHTML = translations[currentLang].lose;
+                return -2;
+            }
+        }
+        // обычная логика
+        for(let i=0; i<boardState.length; i++) if(boardState[i]==='') {
+            let copy=[...boardState]; copy[i]=aiSide;
+            if(checkWinnerGeneric(copy, boardSize, aiSide)) return i;
+            let copy2=[...boardState]; copy2[i]=(aiSide==='X'?'O':'X');
+            if(checkWinnerGeneric(copy2, boardSize, (aiSide==='X'?'O':'X'))) return i;
+        }
+        let center = Math.floor(boardState.length/2);
+        if(boardState[center]==='') return center;
+        let corners=[0, boardSize-1, boardSize*(boardSize-1), boardState.length-1];
+        for(let c of corners) if(boardState[c]==='') return c;
+        let empty = [];
+        for(let i=0; i<boardState.length; i++) if(boardState[i]==='') empty.push(i);
+        if(empty.length) return empty[Math.floor(Math.random()*empty.length)];
+        return -1;
+    }
+    
+    function getAIMove() {
+        if(difficulty === 'easy') {
+            let empty = [];
+            for(let i=0;i<boardState.length;i++) if(boardState[i]==='') empty.push(i);
+            if(empty.length) return empty[Math.floor(Math.random()*empty.length)];
+            return -1;
+        }
+        if(difficulty === 'medium') {
+            for(let i=0;i<boardState.length;i++) if(boardState[i]==='') {
+                let c1=[...boardState]; c1[i]=aiSide;
+                if(checkWinnerGeneric(c1, boardSize, aiSide)) return i;
+                let c2=[...boardState]; c2[i]=(aiSide==='X'?'O':'X');
+                if(checkWinnerGeneric(c2, boardSize, (aiSide==='X'?'O':'X'))) return i;
+            }
+            let empt=[];
+            for(let i=0;i<boardState.length;i++) if(boardState[i]==='') empt.push(i);
+            if(empt.length) return empt[Math.floor(Math.random()*empt.length)];
+            return -1;
+        }
+        if(difficulty === 'hard') {
+            for(let i=0;i<boardState.length;i++) if(boardState[i]==='') {
+                let c1=[...boardState]; c1[i]=aiSide;
+                if(checkWinnerGeneric(c1, boardSize, aiSide)) return i;
+                let c2=[...boardState]; c2[i]=(aiSide==='X'?'O':'X');
+                if(checkWinnerGeneric(c2, boardSize, (aiSide==='X'?'O':'X'))) return i;
+            }
+            let center=Math.floor(boardState.length/2);
+            if(boardState[center]==='') return center;
+            let empt=[];
+            for(let i=0;i<boardState.length;i++) if(boardState[i]==='') empt.push(i);
+            if(empt.length) return empt[Math.floor(Math.random()*empt.length)];
+            return -1;
+        }
+        if(difficulty === 'impossible') {
+            return getImpossibleMoveWithCheat();
+        }
+        return -1;
+    }
+    
+    function makeAIMove() {
+        if(!gameActive || gameEnded) return;
+        if(currentPlayer !== aiSide) return;
+        let move = getAIMove();
+        if(move === -2) return;
+        if(move === -1) return;
+        boardState[move] = aiSide;
+        renderBoard();
+        if(gameActive && !gameEnded) {
+            currentPlayer = (currentPlayer === 'X') ? 'O' : 'X';
+            updateStatusMsg();
+        }
+        if(gameActive && !gameEnded && currentPlayer === aiSide) {
+            setTimeout(()=> makeAIMove(), 100);
+        }
+    }
+    
+    function playerMove(idx) {
+        if(!gameActive || gameEnded) return;
+        if(currentPlayer !== playerSide) return;
+        if(boardState[idx] !== '') return;
+        boardState[idx] = playerSide;
+        renderBoard();
+        currentPlayer = (currentPlayer === 'X') ? 'O' : 'X';
+        updateStatusMsg();
+        if(gameActive && !gameEnded && currentPlayer === aiSide) {
+            setTimeout(()=> makeAIMove(), 100);
+        }
+    }
+    
+    function renderBoard() {
+        const boardDiv = document.getElementById('board');
+        boardDiv.style.gridTemplateColumns = `repeat(${boardSize}, 1fr)`;
+        boardDiv.innerHTML = '';
+        for(let i=0; i<boardState.length; i++) {
+            let cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.innerText = boardState[i];
+            cell.addEventListener('click', (function(idx){ return function(){ playerMove(idx); }; })(i));
+            boardDiv.appendChild(cell);
+        }
+    }
+    
+    function resetGameFull() {
+        boardState = new Array(boardSize*boardSize).fill('');
+        gameActive = true;
+        gameEnded = false;
+        winnerDeclared = false;
+        currentPlayer = 'X';
+        hideCheat();
+        renderBoard();
+        if(playerSide !== 'X') {
+            if(gameActive && !gameEnded && currentPlayer === aiSide) setTimeout(()=> makeAIMove(), 150);
+        }
+        updateStatusMsg();
+    }
+    
+    // ========== НАСТРОЙКИ ==========
+    function setBoardSize(size) {
+        if(size === 4 && !size4Unlocked) return;
+        if(size === 5 && !size5Unlocked) return;
+        boardSize = size;
+        resetGameFull();
+        updateActiveHighlights();
+    }
+    
+    function setDifficulty(diff) {
+        if(diff === 'impossible' && !impossibleUnlocked) return;
+        difficulty = diff;
+        updateActiveHighlights();
+        resetGameFull();
+    }
+    
+    function setPlayerSide(side) {
+        playerSide = side;
+        aiSide = (playerSide === 'X') ? 'O' : 'X';
+        updateActiveHighlights();
+        resetGameFull();
+    }
+    
+    function setTheme(theme) {
+        currentTheme = theme;
+        document.body.classList.remove('light', 'dark');
+        document.body.classList.add(theme);
+        document.getElementById('themeSelect').value = theme;
+    }
+    
+    function setLanguage(lang) {
+        currentLang = lang;
+        document.querySelectorAll('.lang-btn').forEach(btn=>{
+            if(btn.dataset.lang === lang) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        document.getElementById('langSelect').value = lang;
+        updateAllTexts();
+        updateStatusMsg();
+        updateActiveHighlights();
+    }
+    
+    // ========== МАГАЗИН ==========
+    function buyItem(item) {
+        if(item === 'double' && winCounter >= 1 && !doublePurchased) {
+            winCounter--;
+            doublePurchased = true;
+            doublePointsActive = true;
+            if(doublePointsTimeout) clearTimeout(doublePointsTimeout);
+            doublePointsTimeout = setTimeout(() => { doublePointsActive = false; }, 120000);
+            document.getElementById('winScore').innerHTML = winCounter;
+            updateShopButtons();
+        }
+        else if(item === 'size4' && winCounter >= 2 && !size4Unlocked) {
+            winCounter -= 2;
+            size4Unlocked = true;
+            document.getElementById('winScore').innerHTML = winCounter;
+            updateShopButtons();
+            updateActiveHighlights();
+            if(boardSize === 3) setBoardSize(4);
+        }
+        else if(item === 'size5' && winCounter >= 4 && !size5Unlocked) {
+            winCounter -= 4;
+            size5Unlocked = true;
+            document.getElementById('winScore').innerHTML = winCounter;
+            updateShopButtons();
+            updateActiveHighlights();
+            if(boardSize === 3 || boardSize === 4) setBoardSize(5);
+        }
+        else if(item === 'impossible' && winCounter >= 3 && !impossibleUnlocked) {
+            winCounter -= 3;
+            impossibleUnlocked = true;
+            document.getElementById('winScore').innerHTML = winCounter;
+            updateShopButtons();
+            updateActiveHighlights();
+            document.getElementById('impossibleBtn').innerHTML = translations[currentLang].impossible;
+            if(difficulty === 'impossible') setDifficulty('impossible');
+        }
+        else if(item === 'random' && winCounter >= 2) {
+            winCounter -= 2;
+            document.getElementById('winScore').innerHTML = winCounter;
+            let rewards = ['double', 'size4', 'coins'];
+            let chosen = rewards[Math.floor(Math.random() * 3)];
+            if(chosen === 'double' && !doublePurchased) {
+                doublePurchased = true;
+                doublePointsActive = true;
+                if(doublePointsTimeout) clearTimeout(doublePointsTimeout);
+                doublePointsTimeout = setTimeout(() => { doublePointsActive = false; }, 120000);
+                alert("✨ Удвоение активировано!");
+                updateShopButtons();
+            } else if(chosen === 'size4' && !size4Unlocked) {
+                size4Unlocked = true;
+                updateActiveHighlights();
+                updateShopButtons();
+                alert("🎲 Поле 4x4 открыто!");
+            } else {
+                winCounter++;
+                document.getElementById('winScore').innerHTML = winCounter;
+                alert("💰 +1 победа!");
+                updateShopButtons();
+            }
+        }
+        document.getElementById('winScore').innerHTML = winCounter;
+        updateShopButtons();
+    }
+    
+    // ========== ИНИЦИАЛИЗАЦИЯ ==========
+    function initEvents() {
+        document.getElementById('checkWinBtn').addEventListener('click', () => checkAndAward());
+        document.getElementById('resetGameBtn').addEventListener('click', () => resetGameFull());
+        document.getElementById('openShopBtn').addEventListener('click', () => document.getElementById('shopModal').style.display = 'flex');
+        document.getElementById('openSettingsBtn').addEventListener('click', () => document.getElementById('settingsModal').style.display = 'flex');
+        document.getElementById('closeModal').addEventListener('click', () => document.getElementById('shopModal').style.display = 'none');
+        document.getElementById('closeSettingsBtn').addEventListener('click', () => document.getElementById('settingsModal').style.display = 'none');
+        
+        document.querySelectorAll('.buy-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                buyItem(btn.dataset.item);
+                document.getElementById('shopModal').style.display = 'none';
+                setTimeout(() => document.getElementById('shopModal').style.display = 'flex', 100);
+            });
+        });
+        
+        document.querySelectorAll('.size-btn').forEach(btn => {
+            btn.addEventListener('click', () => setBoardSize(parseInt(btn.dataset.size)));
+        });
+        
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.addEventListener('click', () => setDifficulty(btn.dataset.diff));
+        });
+        
+        document.querySelectorAll('.side-btn').forEach(btn => {
+            btn.addEventListener('click', () => setPlayerSide(btn.dataset.side));
+        });
+        
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
+        });
+        
+        document.getElementById('langSelect').addEventListener('change', (e) => setLanguage(e.target.value));
+        document.getElementById('themeSelect').addEventListener('change', (e) => setTheme(e.target.value));
+        
+        window.onclick = (e) => {
+            if(e.target === document.getElementById('shopModal')) document.getElementById('shopModal').style.display = 'none';
+            if(e.target === document.getElementById('settingsModal')) document.getElementById('settingsModal').style.display = 'none';
+        };
+    }
+    
+    function start() {
+        boardSize = 3;
+        difficulty = 'easy';
+        impossibleUnlocked = false;
+        size4Unlocked = false;
+        size5Unlocked = false;
+        doublePurchased = false;
+        winCounter = 0;
+        doublePointsActive = false;
+        playerSide = 'X';
+        aiSide = 'O';
+        
+        document.getElementById('winScore').innerHTML = '0';
+        setLanguage('ru');
+        setTheme('light');
+        updateActiveHighlights();
+        setBoardSize(3);
+        setDifficulty('easy');
+        setPlayerSide('X');
+        initEvents();
+        resetGameFull();
+    }
+    
+    start();
+</script>
+</body>
+</html>
